@@ -70,22 +70,25 @@ Explora todos os nós no mesmo nível antes de avançar para níveis mais profun
 - *Complexidade*: $O(V+E)$ de espaço
 
 ```py
-def bfs(grafo, start, end):
-    queue = deque([(start, [start])])
-    visitado = set()
+from collections import deque
 
-    while queue:
-        node, path = queue.popleft()
-        if node in visitado:
+def bfs(grafo, inicio, objetivo):
+    fila = deque([(inicio, [inicio])])
+    visitados = set()
+
+    while fila:
+        no, caminho = fila.popleft()
+        if no in visitados:
             continue
-        visitado.add(node)
+        visitados.add(no)
+        print(f"Visitando {no}")
 
-        if node == end:
-            return path
+        if no == objetivo:
+            return caminho
 
-        for vizinho in grafo.neighbors(node):
-            if vizinho not in visitado:
-                queue.append((vizinho, path + [vizinho]))
+        for vizinho in grafo.get(no, []):
+            if vizinho not in visitados:
+                fila.append((vizinho, caminho + [vizinho]))
 
     return None
 ```
@@ -100,22 +103,23 @@ Explora um caminho completamente antes de retornar e tentar outro.
 - *Complexidade*: $O(V+E)$ tempo, $O(V)$ ou $O(d)$ espaço
 
 ```py
-def dfs(grafo, start, end):
-    stack = [(start, [start])]
-    visitado = set()
+def dfs(grafo, inicio, objetivo):
+    pilha = [(inicio, [inicio])]
+    visitados = set()
 
-    while stack:
-        node, path = stack.pop()
-        if node in visitado:
+    while pilha:
+        no, caminho = pilha.pop()
+        if no in visitados:
             continue
-        visitado.add(node)
+        visitados.add(no)
+        print(f"Visitando {no}")
 
-        if node == end:
-            return path
+        if no == objetivo:
+            return caminho
 
-        for vizinho in grafo.neighbors(node):
-            if vizinho not in visitado:
-                stack.append((vizinho, path + [vizinho]))
+        for vizinho in grafo.get(no, []):
+            if vizinho not in visitados:
+                pilha.append((vizinho, caminho + [vizinho]))
 
     return None
 ```
@@ -128,26 +132,27 @@ def dfs(grafo, start, end):
 - *Aplicação*: Grafos com custos diferentes nas arestas
 
 ```py
-def ucs(grafo, start, end):
-    priority_queue = [(0, start, [start])]
-    visitado = set()
+import heapq
 
-    while priority_queue:
-        cost, node, path = heapq.heappop(priority_queue)
-        if node in visitado:
-            continue
-        visitado.add(node)
+def ucs(grafo, inicio, objetivo):
+    fila = [(0, inicio, [inicio])]
+    custo_real = {cidade: float('inf') for cidade in grafo}
+    custo_real[inicio] = 0
 
-        if node == end:
-            return path, cost
+    while fila:
+        custo, no, caminho = heapq.heappop(fila)
 
-        for vizinho in grafo.neighbors(node):
-            if vizinho not in visitado:
-                edge_weight = grafo[node][vizinho].get('weight', 1)
-                heapq.heappush(priority_queue,
-                    (cost + edge_weight, vizinho, path + [vizinho]))
+        if no == objetivo:
+            print(f"Caminho encontrado: {caminho} com custo {custo}")
+            return caminho
 
-    return None, float('inf')
+        for vizinho, custo_vizinho in grafo.get(no, []):
+            novo_custo = custo + custo_vizinho
+            if novo_custo < custo_real[vizinho]:
+                custo_real[vizinho] = novo_custo
+                heapq.heappush(fila, (novo_custo, vizinho, caminho + [vizinho]))
+
+    return None
 ```
 
 == Busca com Informação (Heurísticas)
@@ -192,6 +197,8 @@ def busca_gulosa(origem, destino):
 - *Heurística admissível*: Nunca superestima o custo real (h(n) ≤ custo real)
 
 ```py
+import heapq
+
 def a_estrela(origem, destino):
     fila = []
     heapq.heappush(fila, (distancias_em_linha_reta[origem],
@@ -295,14 +302,16 @@ Pandas é biblioteca central para manipulação de dados em Python.
 import pandas as pd
 
 # Criar DataFrame
-df = pd.DataFrame({
-    'Nome': ['Ana', 'Bruno', 'Carlos'],
-    'Idade': [23, 30, 25],
-    'Salário': [4000, 5000, 3500]
-})
+data = {
+    'Nome': ['Ana', 'Bruno', 'Carlos', None, 'Ana'],
+    'Idade': [23, None, 30, 25, 23],
+    'Salário': [4000, 5000, None, 3500, 4000],
+    'Cidade': ['São Paulo', 'São Paulo', 'Rio', 'Belo Horizonte', 'São Paulo']
+}
+df = pd.DataFrame(data)
 
 # Identificar valores ausentes
-df.isnull().sum()
+print(df.isnull().sum())
 
 # Preencher valores ausentes com média
 df['Idade'] = df['Idade'].fillna(df['Idade'].mean())
@@ -348,9 +357,56 @@ str.normalize('NFKD'): Remove acentos e normaliza caracteres Unicode.
 
 *Normal*: Modela dados contínuos que se agrupam em torno da média (ex: altura)
 
+Características:
+- Modelo de dados contínuos.
+- Exemplo: Altura de pessoas.
+- Formato de sino: valores próximos à média são mais comuns.
+- Gráfico: Largo no meio (média), estreita nas extremidades (valores raros).
+
+Z-score: Quão próximo da média. Fórmula: $ Z = (x - mu) / sigma $ onde x: valor observado, μ: média, σ: desvio padrão.
+
+Exemplo: Média (μ) de uma turma em um teste: 70 pontos. Desvio padrão (σ): 10 pontos. Aluno tirou x = 85. Z = (85 - 70) / 10 = 1.5. O Z-score é 1.5, ou seja, o aluno está 1.5 desvios padrão acima da média.
+
+```py
+import numpy as np
+from scipy.stats import norm
+
+media = 0.90
+desvio = 0.02
+
+# Probabilidade de precisão < 0.88
+prob = norm.cdf(0.88, loc=media, scale=desvio)
+print(f"Probabilidade: {prob:.4f}")
+```
+
 *Binomial*: Experimentos com dois resultados possíveis (sucesso/fracasso) em número fixo de tentativas
 
+Características:
+- Experimentos com dois resultados possíveis (sucesso ou falha).
+- Exemplo: Jogar uma moeda 10 vezes. Resultados: "cara" ou "coroa".
+- Aplicações: Aprovação em provas, jogos, etc.
+
+Fórmula: $ P(X = k) = binom(n, k) dot p^k dot (1 - p)^(n - k) $ onde n: número de tentativas, k: número de sucessos, p: probabilidade de sucesso em uma tentativa.
+
+Exemplo: Probabilidade de obter exatamente 3 "caras" em 10 jogadas com p=0.5: P(X=3) = 10 * (0.5)^3 * (0.5)^7 = 0.3125 (31.25%).
+
+```py
+from scipy.stats import binom
+
+# Probabilidade de exatamente 7 acertos em 10 previsões com 80% de chance
+prob = binom.pmf(k=7, n=10, p=0.8)
+print(f"P(X=7): {prob}")
+```
+
 *Poisson*: Número de eventos raros em intervalo fixo (ex: falhas de sistema por hora)
+
+```py
+from scipy.stats import poisson
+
+# Chance de exatamente 3 erros, com média 2 por hora
+prob = poisson.pmf(k=3, mu=2)
+print(f"P(X=3): {prob}")
+```
 
 === Conceitos Fundamentais
 
@@ -387,19 +443,28 @@ str.normalize('NFKD'): Remove acentos e normaliza caracteres Unicode.
 ```py
 import matplotlib.pyplot as plt
 import seaborn as sns
+import pandas as pd
 
 # Matplotlib - Linha
+x = np.linspace(0, 10, 20)
+y = np.sin(x)
 plt.plot(x, y, marker='o')
 plt.title("Gráfico de Linha")
 
 # Seaborn - Dispersão com cores por categoria
+df = pd.DataFrame({
+    "Categoria": ["A", "A", "B", "B", "C", "C"],
+    "X": [1, 2, 3, 4, 5, 6],
+    "Y": [2, 4, 1, 3, 5, 7],
+})
 sns.scatterplot(x="X", y="Y", hue="Categoria", data=df)
 
 # Heatmap de correlação
 sns.heatmap(df.corr(numeric_only=True), annot=True, cmap="coolwarm")
 
 # Pairplot para múltiplas variáveis
-sns.pairplot(df, hue="species")
+iris = sns.load_dataset("iris")
+sns.pairplot(iris, hue="species")
 ```
 
 = Algoritmos de Aprendizado Supervisionado
@@ -419,15 +484,30 @@ sns.pairplot(df, hue="species")
 - *R²*: Coeficiente de determinação (qualidade do ajuste)
 
 ```py
+import pandas as pd
+from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.metrics import mean_squared_error
+
+data = {
+    'tempo_estudo': [2, 4, 6, 8, 10, 12],
+    'frequencia': [50, 60, 70, 80, 90, 100],
+    'nota_final': [5, 6, 7, 8, 9, 10]
+}
+df = pd.DataFrame(data)
+
+X = df[['tempo_estudo', 'frequencia']]
+y = df['nota_final']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 modelo = LinearRegression()
 modelo.fit(X_train, y_train)
 y_pred = modelo.predict(X_test)
 
 mse = mean_squared_error(y_test, y_pred)
-r2 = r2_score(y_test, y_pred)
+print(f"MSE: {mse}")
+print("Coeficientes:", modelo.coef_)
 ```
 
 == Regressão Logística
@@ -459,6 +539,66 @@ print(classification_report(y_test, y_pred))
 print(confusion_matrix(y_test, y_pred))
 ```
 
+== Árvore de Decisão
+
+*Tipo*: Aprendizado Supervisionado
+
+*Objetivo*: Classificação ou regressão através de regras de decisão hierárquicas
+
+*Estrutura*: Modelo em árvore com nós de decisão e folhas (classes)
+
+*Método*: Divide dados em subgrupos baseados nos atributos (features) mais informativos em cada nó, buscando criar folhas "puras" (todos os pontos de uma classe)
+
+*Vantagem Principal*: Equilibra trade-off entre bias (simplificação excessiva) e variance (overfitting)
+
+*Critérios de Divisão*:
+- *Gini*: Mede impureza do nó (0 = nó perfeitamente puro)
+- *Entropia*: Mede desordem dos dados
+
+*Algoritmo CART*: Usado no Scikit-learn, utiliza Gini Index
+
+*Hiperparâmetros Importantes*:
+- *max_depth*: Profundidade máxima da árvore
+- *min_samples_split*: Mínimo de amostras para dividir nó
+- *criterion*: 'gini' ou 'entropy'
+
+```py
+import pandas as pd
+from sklearn.tree import DecisionTreeClassifier, plot_tree
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, classification_report
+import matplotlib.pyplot as plt
+
+data = {
+    'Peso': [150, 170, 140, 130, 155, 135, 165, 145],
+    'Textura': [1, 0, 1, 0, 1, 0, 0, 1],
+    'Fruta': ['maçã', 'laranja', 'maçã', 'laranja', 'maçã', 'laranja', 'laranja', 'maçã']
+}
+df = pd.DataFrame(data)
+
+X = df[['Peso', 'Textura']]
+y = df['Fruta']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+modelo = DecisionTreeClassifier(criterion='gini', max_depth=2, random_state=42)
+modelo.fit(X_train, y_train)
+
+y_pred = modelo.predict(X_test)
+
+print("Acurácia:", accuracy_score(y_test, y_pred))
+print(classification_report(y_test, y_pred))
+
+plt.figure(figsize=(8,6))
+plot_tree(modelo, feature_names=X.columns, class_names=modelo.classes_, filled=True)
+plt.show()
+```
+
+*Métricas de Avaliação*:
+- Acurácia
+- Classification report (precisão, recall, F1)
+- Confusion matrix
+
 = Algoritmos de Aprendizado Não Supervisionado
 
 == K-Means (Clusterização)
@@ -476,13 +616,33 @@ print(confusion_matrix(y_test, y_pred))
 4. *Repetir*: Continuar passos 2-3 até centróides não se moverem significativamente
 
 ```py
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 
-kmeans = KMeans(n_clusters=3, random_state=42)
+clientes = {
+    'cliente_id': [101, 102, 103, 104, 105, 106, 107, 108, 109, 110],
+    'tempo_na_loja': [10, 45, 30, 20, 60, 15, 50, 40, 25, 35],
+    'valor_medio_compra': [20, 200, 150, 50, 300, 25, 250, 180, 60, 100],
+    'visitas_mensais': [1, 5, 4, 2, 6, 1, 5, 4, 2, 3]
+}
+df = pd.DataFrame(clientes)
+
+X = df[['tempo_na_loja', 'valor_medio_compra', 'visitas_mensais']]
+
+kmeans = KMeans(n_clusters=2, random_state=42)
 df['cluster'] = kmeans.fit_predict(X)
 
-# Centróides
-print(kmeans.cluster_centers_)
+print("Centróides:", kmeans.cluster_centers_)
+print(df)
+
+plt.scatter(df['tempo_na_loja'], df['valor_medio_compra'],
+            c=df['cluster'], cmap='viridis', s=100)
+plt.scatter(kmeans.cluster_centers_[:, 0], kmeans.cluster_centers_[:, 1],
+            c='red', s=200, marker='X')
+plt.title("Clusters de Clientes")
+plt.show()
 ```
 
 === Determinando o Número Ideal de Clusters
@@ -513,57 +673,22 @@ plt.show()
 # Silhouette Score
 from sklearn.metrics import silhouette_score
 
+silhouette_scores = []
 for k in range(2, 10):
     modelo = KMeans(n_clusters=k, random_state=42)
     labels = modelo.fit_predict(X)
     score = silhouette_score(X, labels)
+    silhouette_scores.append(score)
     print(f'k={k}, Silhouette = {score:.4f}')
+
+plt.plot(range(2, 10), silhouette_scores)
+plt.xlabel('Número de Clusters (k)')
+plt.ylabel('Silhouette Score')
+plt.show()
 ```
 
 *Métrica de Avaliação*:
 - *Inércia*: Quanto menor, mais compactos os clusters
-
-== Árvore de Decisão
-
-*Tipo*: Aprendizado Supervisionado
-
-*Objetivo*: Classificação ou regressão através de regras de decisão hierárquicas
-
-*Estrutura*: Modelo em árvore com nós de decisão e folhas (classes)
-
-*Método*: Divide dados em subgrupos baseados nos atributos (features) mais informativos em cada nó, buscando criar folhas "puras" (todos os pontos de uma classe)
-
-*Vantagem Principal*: Equilibra trade-off entre bias (simplificação excessiva) e variance (overfitting)
-
-*Critérios de Divisão*:
-- *Gini*: Mede impureza do nó (0 = nó perfeitamente puro)
-- *Entropia*: Mede desordem dos dados
-
-*Algoritmo CART*: Usado no Scikit-learn, utiliza Gini Index
-
-*Hiperparâmetros Importantes*:
-- *max_depth*: Profundidade máxima da árvore
-- *min_samples_split*: Mínimo de amostras para dividir nó
-- *criterion*: 'gini' ou 'entropy'
-
-```py
-from sklearn.tree import DecisionTreeClassifier, plot_tree
-
-modelo = DecisionTreeClassifier(criterion='gini', max_depth=3, random_state=42)
-modelo.fit(X_train, y_train)
-y_pred = modelo.predict(X_test)
-
-# Visualizar árvore
-plt.figure(figsize=(12,8))
-plot_tree(modelo, feature_names=X.columns,
-          class_names=modelo.classes_, filled=True)
-plt.show()
-```
-
-*Métricas de Avaliação*:
-- Acurácia
-- Classification report (precisão, recall, F1)
-- Confusion matrix
 
 = Pipelines e Otimização de Modelos
 
@@ -573,11 +698,19 @@ Pipeline é sequência de transformações seguida de estimador final. Facilita 
 
 ```py
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer
 from sklearn.linear_model import LogisticRegression
 
+# Exemplo com pré-processamento
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('num', StandardScaler(), ['age', 'balance']),
+        ('cat', OneHotEncoder(), ['job', 'marital'])
+    ])
+
 pipeline = Pipeline([
-    ('scaler', StandardScaler()),
+    ('preprocessor', preprocessor),
     ('classifier', LogisticRegression())
 ])
 
@@ -593,11 +726,11 @@ y_pred = pipeline.predict(X_test)
 from sklearn.model_selection import GridSearchCV
 
 param_grid = {
-    'max_depth': [3, 5, 7],
-    'min_samples_split': [2, 5, 10]
+    'classifier__max_iter': [100, 500, 1000],
+    'classifier__C': [0.1, 1, 10]
 }
 
-grid_search = GridSearchCV(DecisionTreeClassifier(), param_grid, cv=5)
+grid_search = GridSearchCV(pipeline, param_grid, cv=5)
 grid_search.fit(X_train, y_train)
 
 print(f"Melhores parâmetros: {grid_search.best_params_}")
@@ -609,6 +742,17 @@ Técnicas para lidar com datasets desbalanceados:
 - *Oversampling*: SMOTE (cria exemplos sintéticos da classe minoritária)
 - *Undersampling*: Remove exemplos da classe majoritária
 - *Class weights*: Ajusta pesos das classes no modelo
+
+```py
+from imblearn.over_sampling import SMOTE
+from sklearn.linear_model import LogisticRegression
+
+smote = SMOTE(random_state=42)
+X_res, y_res = smote.fit_resample(X_train, y_train)
+
+model = LogisticRegression(class_weight='balanced', max_iter=1000)
+model.fit(X_res, y_res)
+```
 
 == Métricas de Avaliação Detalhadas
 
@@ -641,11 +785,12 @@ Separar dados em treino e teste para avaliar generalização do modelo:
 from sklearn.model_selection import train_test_split
 
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
+    X, y, test_size=0.2, random_state=42, stratify=y
 )
 ```
 
 *test_size=0.2*: 20% dos dados para teste, 80% para treino
+*stratify=y*: Mantém distribuição de classes no split
 
 == Validação Cruzada (Cross-Validation)
 
@@ -661,3 +806,4 @@ print(f"Acurácia média: {scores.mean():.2f} (+/- {scores.std():.2f})")
 *cv=5*: 5-fold cross-validation
 
 *Vantagem*: Usa todos os dados para treino e validação, reduz variância da estimativa
+
