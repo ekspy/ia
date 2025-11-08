@@ -1,4 +1,4 @@
-Faltas disponíveis: 1
+Faltas disponíveis: 0
 
 Segundas-feiras até a prova: 0
 Sextas-feiras até a prova: 0
@@ -6,14 +6,14 @@ Total: 0
 
 ---
 
-Segunda-feiras depois da prova: 1
-Sextas-feiras depois da prova: 2
+Segunda-feiras depois da prova: 0
+Sextas-feiras depois da prova: 0
 
 ---
 
-Segundas-feiras totais: 1
-Sextas-feiras totais: 2
-Total: 3
+Segundas-feiras totais: 0
+Sextas-feiras totais: 0
+Total: 0
 
 ---
 
@@ -43,13 +43,10 @@ Total: 3
 ## (1) 10/10 - Ferramentas para Construção de Pipelines de IA. Ajuste e Otimização de Modelos de IA.
 # 13/10 - FERIADO (não conta)
 ## 17/10 - FERIADO (não conta)
-
 # 20/10 - Avaliação Teórica (não conta)
-
 ## 24/10 - Random Forest e Orientações para o Projeto Final.
 # 27/10 - Random Forest - Exercícios.
 ## 31/10 - Exercícios Práticos sobre Pipelines de IA e Ajuste e Otimização.
-
 # 03/11 - Desenvolvimento do Projeto Final - Auxílio (não conta)
 ## 07/11 - Desenvolvimento do Projeto Final - Auxílio (não conta)
 
